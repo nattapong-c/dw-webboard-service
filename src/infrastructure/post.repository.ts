@@ -175,7 +175,7 @@ export class PostRepository implements PostRepositoryInterface {
 
         } catch (error) {
             this.logger.error(error);
-            throw new HttpException('get post error', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException('list post error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

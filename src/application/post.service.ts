@@ -3,6 +3,7 @@ import { CommunityType } from "src/domain/model/community";
 import { Post, PostDetail, PostPagination } from "src/domain/model/post";
 
 import { PostServiceInterface } from "src/domain/ports/inbound/post.service";
+import { CommentRepositoryInterface } from "src/domain/ports/outbound/comment.repository";
 import { PostRepositoryInterface } from "src/domain/ports/outbound/post.repository";
 
 @Injectable()
@@ -11,7 +12,9 @@ export class PostService implements PostServiceInterface {
 
     constructor(
         @Inject(PostRepositoryInterface)
-        private readonly postRepository: PostRepositoryInterface
+        private readonly postRepository: PostRepositoryInterface,
+        @Inject(CommentRepositoryInterface)
+        private readonly commentRepository: CommentRepositoryInterface
     ) { }
 
     async create(data: Post): Promise<void> {
@@ -59,7 +62,11 @@ export class PostService implements PostServiceInterface {
             this.logger.warn(`post ${id} not found`);
             throw new HttpException('post not found', HttpStatus.NOT_FOUND);
         }
-        // TODO get comment
-        return post;
+
+        const comments = await this.commentRepository.list(id);
+        return {
+            ...post,
+            comments
+        };
     }
 }
