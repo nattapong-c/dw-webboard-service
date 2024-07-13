@@ -6,7 +6,7 @@ import { UserRepositoryInterface } from "src/domain/ports/outbound/user.reposito
 import { MongoDB } from "../utils";
 
 export class UserMockRepository implements UserRepositoryInterface {
-    private USER_DB = 'user_mock';
+    private USER_DB = 'mock_user';
     private db: Collection;
     private logger = new Logger(UserMockRepository.name);
 

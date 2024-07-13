@@ -9,7 +9,7 @@ import { MongoDB } from '../utils';
 
 
 describe('UserController', () => {
-    const USER_DB = 'user_mock'
+    const USER_DB = 'mock_user'
     let appController: UserController;
 
     beforeEach(async () => {
