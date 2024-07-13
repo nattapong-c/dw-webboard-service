@@ -11,6 +11,8 @@ import { UserRepository } from './infrastructure/user.repository';
 import { JWT } from './utils';
 import { AuthController } from './interface/auth.controller';
 import { AuthService } from './application/auth.service';
+import { PostService } from './application/post.service';
+import { PostController } from './interface/post.controller';
 
 @Module({
   imports: [ConfigModule.forRoot(), JwtModule.register({
@@ -18,10 +20,11 @@ import { AuthService } from './application/auth.service';
     secret: JWT.secret,
     signOptions: { expiresIn: '1d' },
   })],
-  controllers: [UserController, AuthController],
+  controllers: [UserController, AuthController, PostController],
   providers: [
     UserService,
     AuthService,
+    PostService,
     {
       provide: UserRepositoryInterface,
       useClass: UserRepository
