@@ -70,12 +70,17 @@ export class PostController {
         @Query('size') size: string,
         @Query('community') community: string,
         @Query('topic') topic: string,
+        @Query('private') isPrivate: string,
         @Request() request: Request,
     ) {
-        const token = Utils.getToken(request);
+
         let userId = undefined;
-        if (token) {
-            userId = JWT.getTokenInfo(token)
+        if (isPrivate === 'true') {
+            const token = Utils.getToken(request);
+            if (!token) {
+                throw new HttpException('invalid token', HttpStatus.UNAUTHORIZED);
+            }
+            userId = JWT.getTokenInfo(token).id;
         }
 
         const pageNum = Number.parseInt(page);

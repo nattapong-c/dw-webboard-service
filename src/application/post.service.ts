@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from "@nestjs/common";
+
 import { CommunityType } from "src/domain/model/community";
 import { Post, PostDetail, PostPagination } from "src/domain/model/post";
-
-import { PostServiceInterface } from "src/domain/ports/inbound/post.service";
-import { CommentRepositoryInterface } from "src/domain/ports/outbound/comment.repository";
-import { PostRepositoryInterface } from "src/domain/ports/outbound/post.repository";
+import { PostServiceInterface } from "../domain/ports/inbound/post.service";
+import { CommentRepositoryInterface } from "../domain/ports/outbound/comment.repository";
+import { PostRepositoryInterface } from "../domain/ports/outbound/post.repository";
 
 @Injectable()
 export class PostService implements PostServiceInterface {
@@ -14,7 +14,7 @@ export class PostService implements PostServiceInterface {
         @Inject(PostRepositoryInterface)
         private readonly postRepository: PostRepositoryInterface,
         @Inject(CommentRepositoryInterface)
-        private readonly commentRepository: CommentRepositoryInterface
+        private readonly commentRepository: CommentRepositoryInterface,
     ) { }
 
     async create(data: Post): Promise<void> {

@@ -1,8 +1,9 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from "@nestjs/common";
-import { Comment } from "src/domain/model/comment";
-import { CommentServiceInterface } from "src/domain/ports/inbound/comment.service";
-import { CommentRepositoryInterface } from "src/domain/ports/outbound/comment.repository";
-import { PostRepositoryInterface } from "src/domain/ports/outbound/post.repository";
+
+import { Comment } from "../domain/model/comment";
+import { CommentServiceInterface } from "../domain/ports/inbound/comment.service";
+import { CommentRepositoryInterface } from "../domain/ports/outbound/comment.repository";
+import { PostRepositoryInterface } from "../domain/ports/outbound/post.repository";
 
 @Injectable()
 export class CommentService implements CommentServiceInterface {

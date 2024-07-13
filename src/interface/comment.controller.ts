@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, HttpException, HttpStatus, Param, Post, Put, Request } from "@nestjs/common";
 
 import { CommentService } from "../application/comment.service";
-import { JWT, Utils } from "src/utils";
+import { JWT, Utils } from "../utils";
 import { CommentCreateDto } from "./dto/comment.create";
-import { Response } from "src/utils/response";
+import { Response } from "../utils/response";
 
 @Controller('v1/comment')
 export class CommentController {
