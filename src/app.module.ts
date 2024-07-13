@@ -13,6 +13,10 @@ import { AuthController } from './interface/auth.controller';
 import { AuthService } from './application/auth.service';
 import { PostService } from './application/post.service';
 import { PostController } from './interface/post.controller';
+import { CommentRepositoryInterface } from './domain/ports/outbound/comment.repository';
+import { CommentRepository } from './infrastructure/comment.repository';
+import { CommentService } from './application/comment.service';
+import { CommentController } from './interface/comment.controller';
 
 @Module({
   imports: [ConfigModule.forRoot(), JwtModule.register({
@@ -20,11 +24,12 @@ import { PostController } from './interface/post.controller';
     secret: JWT.secret,
     signOptions: { expiresIn: '1d' },
   })],
-  controllers: [UserController, AuthController, PostController],
+  controllers: [UserController, AuthController, PostController, CommentController],
   providers: [
     UserService,
     AuthService,
     PostService,
+    CommentService,
     {
       provide: UserRepositoryInterface,
       useClass: UserRepository
@@ -32,6 +37,10 @@ import { PostController } from './interface/post.controller';
     {
       provide: PostRepositoryInterface,
       useClass: PostRepository
+    },
+    {
+      provide: CommentRepositoryInterface,
+      useClass: CommentRepository
     }
   ],
 })
