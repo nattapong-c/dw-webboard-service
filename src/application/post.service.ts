@@ -48,7 +48,10 @@ export class PostService implements PostServiceInterface {
             throw new HttpException('post not found', HttpStatus.NOT_FOUND);
         }
 
-        await this.postRepository.delete(id);
+        await Promise.all([
+            this.postRepository.delete(id),
+            this.commentRepository.deleteByPostId(id)
+        ]);
     }
 
     async list(page: number, size: number, community?: CommunityType, userId?: string, topic?: string): Promise<PostPagination> {

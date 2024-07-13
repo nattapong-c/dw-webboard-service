@@ -6,6 +6,7 @@ export interface CommentRepositoryInterface {
     delete(id: string): Promise<void>;
     list(postId: string): Promise<CommentDetail[]>;
     get(id: string): Promise<CommentModel>;
+    deleteByPostId(postId: string): Promise<void>;
 }
 
 export const CommentRepositoryInterface = Symbol('CommentRepositoryInterface')

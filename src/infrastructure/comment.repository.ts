@@ -128,4 +128,13 @@ export class CommentRepository implements CommentRepositoryInterface {
             throw new HttpException('get comment error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    async deleteByPostId(postId: string): Promise<void> {
+        try {
+            await this.db.deleteMany({ post_id: postId });
+        } catch (error) {
+            this.logger.error(error);
+            throw new HttpException('delete by post comment error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
