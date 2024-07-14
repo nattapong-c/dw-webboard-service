@@ -52,10 +52,16 @@ Test user service
   yarn test:user
 ```
 
-Test post service
+Test post service part 1
 
 ```
-  yarn test:post
+  yarn test:post1
+```
+
+Test post service part 2
+
+```
+  yarn test:post2
 ```
 
 Test comment service
@@ -69,6 +75,8 @@ Test auth service
 ```
   yarn test:auth
 ```
+
+if met some error while testing, try to use `describe.only` or `describe.skip` to test specific testcase.
 
 ## Packages in project
 
@@ -90,7 +98,7 @@ In this project, It is base on haxagonal architecture design
                 ├── inbound       # Interface files for services
                 ├── outbound      # Interface files for repository
     ├── infrastructure            # Repository files for database or third-party api
-    ├── interface                 # Controller files
+    ├── interface                 # Controller files and Unit test files
           ├── dto                 # DTO files (request body and validation)
     ├── utils                     # Tools and utilities
   ├── .env                        # Main env file
