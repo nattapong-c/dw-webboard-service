@@ -98,9 +98,10 @@ In this project, It is base on haxagonal architecture design
                 ├── inbound       # Interface files for services
                 ├── outbound      # Interface files for repository
     ├── infrastructure            # Repository files for database or third-party api
-    ├── interface                 # Controller files and Unit test files
+    ├── interface                 # Controller files
           ├── dto                 # DTO files (request body and validation)
     ├── utils                     # Tools and utilities
+    ├── test                      # Unit test files
   ├── .env                        # Main env file
   ├── .env.test.local             # Testing env file
   └── README.md
