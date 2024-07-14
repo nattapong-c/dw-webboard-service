@@ -2,8 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 
-import { AuthController } from "./auth.controller";
-import { UserController } from "./user.controller";
+import { AuthController } from "../interface/auth.controller";
+import { UserController } from "../interface/user.controller";
 import { UserService } from "../application/user.service";
 import { UserRepositoryInterface } from "../domain/ports/outbound/user.repository";
 import { UserMockRepository } from "../infrastructure/user.repository.mock";

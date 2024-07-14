@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 
-import { UserController } from './user.controller';
+import { UserController } from '../interface/user.controller';
 import { UserService } from '../application/user.service';
 import { UserRepositoryInterface } from '../domain/ports/outbound/user.repository';
 import { UserMockRepository } from '../infrastructure/user.repository.mock';
