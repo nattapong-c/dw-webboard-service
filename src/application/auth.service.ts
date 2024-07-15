@@ -23,6 +23,10 @@ export class AuthService implements AuthServiceInterface {
         }
 
         const payload = { sub: user._id, username: user.username };
+        if (user.picture) {
+            payload['picture'] = user.picture;
+        }
+
         return {
             access_token: await this.jwtService.signAsync(payload),
         };

@@ -21,7 +21,7 @@ export class UserService implements UserServiceInterface {
 
         await this.userRepository.create({
             username: data.username,
-            picture: data.picture || 'default'
+            picture: data.picture
         });
         this.logger.log('create user done');
     }
