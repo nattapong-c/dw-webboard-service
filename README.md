@@ -28,7 +28,7 @@ see example in .env.example file
 
 `JWT_SECRET` secret for generating JWT tokwn (default: 'secretforjwt')
 
-`PORT` custom service port (default: 3000)
+`PORT` custom service port (default: 3001)
 
 ## Start Service
 
