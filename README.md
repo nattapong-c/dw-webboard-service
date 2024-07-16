@@ -36,6 +36,22 @@ see example in .env.example file
   yarn start
 ```
 
+**Create User before login**
+
+## API Reference
+
+#### Create User
+
+```http
+  POST /api/v1/user
+```
+
+JSON body
+
+| Key        | Type     | Description                      |
+| :--------- | :------- | :------------------------------- |
+| `username` | `string` | **Required**. Username for login |
+
 ## Unit Testing
 
 Create and setup environment variable for testing in .env.test.local (same as .env)
