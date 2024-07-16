@@ -51,6 +51,7 @@ JSON body
 | Key        | Type     | Description                      |
 | :--------- | :------- | :------------------------------- |
 | `username` | `string` | **Required**. Username for login |
+| `picture`  | `string` | **Optional**. url picture        |
 
 ## Unit Testing
 
