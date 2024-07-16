@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  a-board-service:
+    image: a-board-service:1.0.0
+    container_name: a-board-service
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - MONGODB_DB=a_board
+      - MONGODB_URI=mongodb://mongodb:27017
+    ports:
+      - 3001:3001
+    networks:
+      - internal
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=a_board
+    volumes:
+      - ./aboarddb:/data/db
+    networks:
+      - internal
+networks:
+  internal:

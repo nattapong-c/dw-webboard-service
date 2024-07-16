@@ -36,6 +36,12 @@ see example in .env.example file
   yarn start
 ```
 
+## Start Service with Docker Compose
+
+```
+  docker-compose up -d
+```
+
 **Create User before login**
 
 ## API Reference
@@ -128,3 +134,4 @@ In this project, It is base on haxagonal architecture design
 
 - [Yarn installation](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable)
 - [MongoDB installation](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-community-with-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
