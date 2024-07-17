@@ -6,7 +6,7 @@ Install package service
   yarn install
 ```
 
-Install and run MongoDB with Docker
+Install and run MongoDB with Docker (No need if start service by docker compose)
 
 ```
   docker pull mongodb/mongodb-community-server:latest
@@ -36,7 +36,7 @@ see example in .env.example file
   yarn start
 ```
 
-## Start Service with Docker Compose
+## Start Service with Docker Compose (Include MongoDB)
 
 ```
   docker-compose up -d
