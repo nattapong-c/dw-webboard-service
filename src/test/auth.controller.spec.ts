@@ -1,72 +1,92 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigModule } from "@nestjs/config";
-import { JwtModule } from "@nestjs/jwt";
+import { INestApplication } from "@nestjs/common";
+import * as request from 'supertest';
 
-import { AuthController } from "../interface/auth.controller";
-import { UserController } from "../interface/user.controller";
-import { UserService } from "../application/user.service";
-import { UserRepositoryInterface } from "../domain/ports/outbound/user.repository";
-import { UserMockRepository } from "../infrastructure/user.repository.mock";
-import { AuthService } from "../application/auth.service";
-import { JWT, MongoDB } from "../utils";
+import { MongoDB } from "../utils";
+import { AppModule } from "../app.module";
 
 describe('AuthController', () => {
     const USER_DB = 'mock_user';
-    let authController: AuthController;
-    let userController: UserController;
+    let testapp: INestApplication;
 
-    beforeEach(async () => {
+    let accessTokenUser1 = '';
+    let accessTokenUser2 = '';
+    let server: any;
+
+    beforeAll(async () => {
         const app: TestingModule = await Test.createTestingModule({
             imports: [
                 ConfigModule.forRoot({
                     envFilePath: '.env.test.local'
                 }),
-                JwtModule.register({
-                    global: true,
-                    secret: JWT.secret,
-                    signOptions: { expiresIn: '1d' },
-                })
-            ],
-            controllers: [UserController, AuthController],
-            providers: [UserService, AuthService,
-                {
-                    provide: UserRepositoryInterface,
-                    useClass: UserMockRepository
-                }
+                AppModule
             ],
         }).compile();
 
-        userController = app.get<UserController>(UserController);
-        authController = app.get<AuthController>(AuthController);
+        testapp = app.createNestApplication();
+        await testapp.init();
+        server = testapp.getHttpServer();
+
+        await Promise.all([
+            request(server)
+                .post('/v1/user')
+                .send({
+                    username: 'testuser1'
+                }),
+            request(server)
+                .post('/v1/user')
+                .send({
+                    username: 'testuser2'
+                })
+        ])
+
+        const [authuser1, authuser2] = await Promise.all([
+            request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser1'
+                }),
+            request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser2'
+                })
+        ])
+
+        accessTokenUser1 = authuser1.body.data.access_token;
+        accessTokenUser2 = authuser2.body.data.access_token;
+
+    });
+
+    afterAll(async () => {
+        await Promise.all([
+            testapp.close(),
+            (await MongoDB.connection(USER_DB)).deleteMany(),
+        ]);
+
     });
 
     describe('login', () => {
-        beforeEach(async () => {
-            await userController.create({
-                username: 'testuser1'
-            });
-        });
-
         it('should return "invalid username"', async () => {
-            try {
-                await authController.login({
-                    username: 'testuser2'
+            const result = await request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser3'
                 });
-            } catch (error) {
-                expect(error.message).toBe('invalid username');
-                expect(error.status).toBe(401);
-            }
+
+            const error = JSON.parse(result.error['text'])
+            expect(error.message).toBe('invalid username');
+            expect(result.status).toBe(401);
         });
 
         it('should return access_token in response', async () => {
-            const result = await authController.login({
-                username: 'testuser1'
-            });
-            expect(result['data'].access_token).not.toBeUndefined()
-        });
-
-        afterEach(async () => {
-            (await MongoDB.connection(USER_DB)).deleteMany()
+            const result = await request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser1'
+                });
+            expect(result.body['data'].access_token).not.toBeUndefined()
         });
     })
 })
