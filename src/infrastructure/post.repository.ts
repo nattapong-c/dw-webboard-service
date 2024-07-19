@@ -9,13 +9,16 @@ import { CommunityType } from "src/domain/model/community";
 export class PostRepository implements PostRepositoryInterface {
     private db: Collection;
     private logger = new Logger(PostRepository.name);
+    private mockDb = 'mock_post';
+    private mockDbUser = 'mock_user';
+    private mockDbComment = 'mock_comment';
 
     constructor() {
-        this.connectDb()
+        this.connectDb('post')
     }
 
-    async connectDb() {
-        this.db = await MongoDB.connection('post')
+    async connectDb(dbName: string) {
+        this.db = await MongoDB.connection(dbName)
         await this.db.createIndexes([
             { key: { community: 1 } },
             { key: { topic: 1 } },
@@ -25,6 +28,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async create(data: Post): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const date = new Date();
             await this.db.insertOne({
@@ -42,6 +48,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async update(id: string, data: Post): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const query = { _id: new ObjectId(id) };
             await this.db.findOneAndUpdate(query, {
@@ -59,6 +68,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async delete(id: string): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             await this.db.deleteOne({ _id: new ObjectId(id) });
         } catch (error) {
@@ -68,6 +80,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async get(id: string): Promise<PostModel> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const result = await this.db.findOne<PostModel>({ _id: new ObjectId(id) });
             return result;
@@ -78,6 +93,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async list(page: number, size: number, community?: CommunityType, userId?: string, topic?: string): Promise<PostPagination> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const query = {};
             if (community) {
@@ -85,6 +103,7 @@ export class PostRepository implements PostRepositoryInterface {
             }
 
             if (userId) {
+                console.log(userId)
                 query['user_id'] = userId;
             }
 
@@ -92,7 +111,7 @@ export class PostRepository implements PostRepositoryInterface {
                 query['topic'] = { $regex: new RegExp(topic) };
             }
 
-            const aggregates = [
+            let aggregates: any = [
                 {
                     $match: query,
                 },
@@ -108,7 +127,7 @@ export class PostRepository implements PostRepositoryInterface {
                 },
                 {
                     $lookup: {
-                        from: 'user',
+                        from: !global.describe ? 'user' : this.mockDbUser,
                         let: { user_id: '$user_id' },
                         pipeline: [
                             {
@@ -130,7 +149,7 @@ export class PostRepository implements PostRepositoryInterface {
                 },
                 {
                     $lookup: {
-                        from: 'comment',
+                        from: !global.describe ? 'comment' : this.mockDbComment,
                         localField: 'id_string',
                         foreignField: 'post_id',
                         as: 'comment_count',
@@ -180,6 +199,9 @@ export class PostRepository implements PostRepositoryInterface {
     }
 
     async getDetail(id: string): Promise<PostDetail> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const query = { _id: new ObjectId(id) };
 
@@ -199,7 +221,7 @@ export class PostRepository implements PostRepositoryInterface {
                 },
                 {
                     $lookup: {
-                        from: 'user',
+                        from: !global.describe ? 'user' : this.mockDbUser,
                         let: { user_id: '$user_id' },
                         pipeline: [
                             {

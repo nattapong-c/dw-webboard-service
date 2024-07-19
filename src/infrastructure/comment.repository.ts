@@ -8,19 +8,24 @@ import { Comment, CommentDetail, CommentModel } from "src/domain/model/comment";
 export class CommentRepository implements CommentRepositoryInterface {
     private readonly logger = new Logger(CommentRepository.name);
     private db: Collection;
+    private mockDb = 'mock_comment';
+    private mockDbUser = 'mock_user';
 
     constructor() {
-        this.connectDb()
+        this.connectDb('comment')
     }
 
-    async connectDb() {
-        this.db = await MongoDB.connection('comment')
+    async connectDb(dbName: string) {
+        this.db = await MongoDB.connection(dbName)
         await this.db.createIndex({
             post_id: 1
         });
     }
 
     async create(data: Comment): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const date = new Date();
             await this.db.insertOne({
@@ -62,6 +67,9 @@ export class CommentRepository implements CommentRepositoryInterface {
     }
 
     async list(postId: string): Promise<CommentDetail[]> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const aggregates = [
                 {
@@ -76,7 +84,7 @@ export class CommentRepository implements CommentRepositoryInterface {
                 },
                 {
                     $lookup: {
-                        from: 'user',
+                        from: !global.describe ? 'user' : this.mockDbUser,
                         let: { user_id: '$user_id' },
                         pipeline: [
                             {
@@ -120,6 +128,9 @@ export class CommentRepository implements CommentRepositoryInterface {
     }
 
     async get(id: string): Promise<CommentModel> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const result = await this.db.findOne<CommentModel>({ _id: new ObjectId(id) });
             return result;
@@ -130,6 +141,9 @@ export class CommentRepository implements CommentRepositoryInterface {
     }
 
     async deleteByPostId(postId: string): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             await this.db.deleteMany({ post_id: postId });
         } catch (error) {

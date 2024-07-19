@@ -1,25 +1,13 @@
 import { ConfigModule } from "@nestjs/config";
-import { JwtModule } from "@nestjs/jwt";
 import { Test, TestingModule } from "@nestjs/testing";
 import * as request from 'supertest';
 import { INestApplication } from "@nestjs/common";
 
-import { JWT, MongoDB } from "../utils";
+import { MongoDB } from "../utils";
 import { UserController } from "../interface/user.controller";
 import { AuthController } from "../interface/auth.controller";
-import { AuthService } from "../application/auth.service";
-import { UserService } from "../application/user.service";
-import { UserRepositoryInterface } from "../domain/ports/outbound/user.repository";
-import { UserMockRepository } from "../infrastructure/user.repository.mock";
-import { PostRepositoryInterface } from "../domain/ports/outbound/post.repository";
-import { PostMockRepository } from "../infrastructure/post.repository.mock";
-import { CommentRepositoryInterface } from "../domain/ports/outbound/comment.repository";
-import { CommentMockRepository } from "../infrastructure/comment.repository.mock";
-import { PostService } from "../application/post.service";
-import { PostController } from "../interface/post.controller";
 import { PostCreateDto } from "../interface/dto/post.create";
-import { CommentController } from "../interface/comment.controller";
-import { CommentService } from "../application/comment.service";
+import { AppModule } from "../app.module";
 
 jest.setTimeout(30000);
 
@@ -27,44 +15,71 @@ describe('PostController', () => {
     const USER_DB = 'mock_user';
     const POST_DB = 'mock_post';
     const COMMENT_DB = 'mock_comment';
-    let authController: AuthController;
-    let userController: UserController;
     let testapp: INestApplication;
 
-    beforeEach(async () => {
+    let accessTokenUser1 = '';
+    let accessTokenUser2 = '';
+    let server: any;
+
+    beforeAll(async () => {
         const app: TestingModule = await Test.createTestingModule({
             imports: [
                 ConfigModule.forRoot({
                     envFilePath: '.env.test.local'
                 }),
-                JwtModule.register({
-                    global: true,
-                    secret: JWT.secret,
-                    signOptions: { expiresIn: '1d' },
-                })
-            ],
-            controllers: [UserController, AuthController, PostController, CommentController],
-            providers: [UserService, AuthService, PostService, CommentService,
-                {
-                    provide: UserRepositoryInterface,
-                    useClass: UserMockRepository
-                },
-                {
-                    provide: PostRepositoryInterface,
-                    useClass: PostMockRepository
-                },
-                {
-                    provide: CommentRepositoryInterface,
-                    useClass: CommentMockRepository
-                }
+                AppModule
             ],
         }).compile();
 
-        userController = app.get<UserController>(UserController);
-        authController = app.get<AuthController>(AuthController);
-
         testapp = app.createNestApplication();
         await testapp.init();
+        server = testapp.getHttpServer();
+
+        await Promise.all([
+            request(server)
+                .post('/v1/user')
+                .send({
+                    username: 'testuser1'
+                }),
+            request(server)
+                .post('/v1/user')
+                .send({
+                    username: 'testuser2'
+                })
+        ])
+
+        const [authuser1, authuser2] = await Promise.all([
+            request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser1'
+                }),
+            request(server)
+                .post('/v1/auth/login')
+                .send({
+                    username: 'testuser2'
+                })
+        ])
+
+        accessTokenUser1 = authuser1.body.data.access_token;
+        accessTokenUser2 = authuser2.body.data.access_token;
+
+        await request(server)
+            .post('/v1/post')
+            .set({
+                'authorization': accessTokenUser1
+            })
+            .send(payload)
+    });
+
+    afterAll(async () => {
+        await Promise.all([
+            testapp.close(),
+            (await MongoDB.connection(USER_DB)).deleteMany(),
+            (await MongoDB.connection(POST_DB)).deleteMany(),
+            (await MongoDB.connection(COMMENT_DB)).deleteMany()
+        ]);
+
     });
 
     const payload: PostCreateDto = {
@@ -74,64 +89,27 @@ describe('PostController', () => {
     }
 
     describe('get post detail', () => {
-        let accessTokenUser1 = '';
-        let accessTokenUser2 = '';
         let postId = '';
 
         beforeEach(async () => {
-            const server = testapp.getHttpServer()
-
-            await Promise.all([
-                userController.create({
-                    username: 'testuser1'
-                }),
-                userController.create({
-                    username: 'testuser2'
-                }),
-            ]);
-
-            const [authuser1, authuser2] = await Promise.all([
-                authController.login({
-                    username: 'testuser1'
-                }),
-                authController.login({
-                    username: 'testuser2'
-                })
-            ]);
-
-            accessTokenUser1 = authuser1['data'].access_token;
-            accessTokenUser2 = authuser2['data'].access_token;
-
-            await request(server)
-                .post('/v1/post')
-                .set({
-                    'authorization': accessTokenUser1
-                })
-                .send(payload)
-
             const posts = await request(server)
                 .get('/v1/post')
                 .query({
                     page: 1,
                     size: 1,
                 });
-
             postId = posts.body['data'].posts[0]._id
         });
 
         it('post not found', async () => {
-            try {
-                const server = testapp.getHttpServer();
-                await request(server)
-                    .get(`/v1/post/66926bf75c6fd6a97dc0fc5c`)
-            } catch (error) {
-                expect(error.message).toBe('post not found');
-                expect(error.status).toBe(404);
-            }
+            const result = await request(server)
+                .get(`/v1/post/66926bf75c6fd6a97dc0fc5c`)
+            const error = JSON.parse(result.error['text'])
+            expect(error.message).toBe('post not found');
+            expect(result.status).toBe(404);
         })
 
         it('success get post', async () => {
-            const server = testapp.getHttpServer()
             const result = await request(server)
                 .get(`/v1/post/${postId}`)
                 .expect(200);
@@ -142,7 +120,6 @@ describe('PostController', () => {
         });
 
         it('success get post with comments', async () => {
-            const server = testapp.getHttpServer()
             await request(server)
                 .post('/v1/comment')
                 .set({
@@ -161,55 +138,10 @@ describe('PostController', () => {
             expect(result.body['data']).toHaveProperty('user');
             expect(result.body['data'].comments).toHaveLength(1);
         });
-
-        afterEach(async () => {
-            await Promise.all([
-                testapp.close(),
-                (await MongoDB.connection(USER_DB)).deleteMany(),
-                (await MongoDB.connection(POST_DB)).deleteMany(),
-                (await MongoDB.connection(COMMENT_DB)).deleteMany(),
-            ]);
-        });
     });
 
     describe('list post', () => {
-        let accessTokenUser1 = '';
-        let accessTokenUser2 = '';
-
-        beforeEach(async () => {
-            const server = testapp.getHttpServer()
-
-            await Promise.all([
-                userController.create({
-                    username: 'testuser1'
-                }),
-                userController.create({
-                    username: 'testuser2'
-                }),
-            ]);
-
-            const [authuser1, authuser2] = await Promise.all([
-                authController.login({
-                    username: 'testuser1'
-                }),
-                authController.login({
-                    username: 'testuser2'
-                })
-            ]);
-
-            accessTokenUser1 = authuser1['data'].access_token;
-            accessTokenUser2 = authuser2['data'].access_token;
-
-            await request(server)
-                .post('/v1/post')
-                .set({
-                    'authorization': accessTokenUser1
-                })
-                .send(payload)
-        });
-
         it('list post success', async () => {
-            const server = testapp.getHttpServer()
             const posts = await request(server)
                 .get('/v1/post')
                 .query({
@@ -220,7 +152,6 @@ describe('PostController', () => {
         });
 
         it('list post success with topic search', async () => {
-            const server = testapp.getHttpServer()
             const posts = await request(server)
                 .get('/v1/post')
                 .query({
@@ -232,7 +163,6 @@ describe('PostController', () => {
         });
 
         it('list post empty with topic search', async () => {
-            const server = testapp.getHttpServer()
             const posts = await request(server)
                 .get('/v1/post')
                 .query({
@@ -244,7 +174,6 @@ describe('PostController', () => {
         });
 
         it('list only owner user1 post success', async () => {
-            const server = testapp.getHttpServer()
             const posts = await request(server)
                 .get('/v1/post')
                 .set({
@@ -259,7 +188,6 @@ describe('PostController', () => {
         });
 
         it('list only owner user2 post success', async () => {
-            const server = testapp.getHttpServer()
             const posts = await request(server)
                 .get('/v1/post')
                 .set({
@@ -270,16 +198,8 @@ describe('PostController', () => {
                     size: 1,
                     private: true
                 });
+            console.log(posts.body['data'].posts)
             expect(posts.body['data'].posts).toHaveLength(0);
-        });
-
-        afterEach(async () => {
-            await Promise.all([
-                testapp.close(),
-                (await MongoDB.connection(USER_DB)).deleteMany(),
-                (await MongoDB.connection(POST_DB)).deleteMany(),
-                (await MongoDB.connection(COMMENT_DB)).deleteMany(),
-            ]);
         });
     });
 })

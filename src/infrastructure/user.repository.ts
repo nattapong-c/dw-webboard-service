@@ -8,16 +8,20 @@ import { MongoDB } from "../utils";
 export class UserRepository implements UserRepositoryInterface {
     private db: Collection;
     private logger = new Logger(UserRepository.name);
+    private mockDb = 'mock_user';
 
     constructor() {
-        this.connectDb()
+        this.connectDb('user')
     }
 
-    async connectDb() {
-        this.db = await MongoDB.connection('user')
+    async connectDb(dbName: string) {
+        this.db = await MongoDB.connection(dbName)
     }
 
     async create(data: User): Promise<void> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const date = new Date();
             await this.db.insertOne({
@@ -33,6 +37,9 @@ export class UserRepository implements UserRepositoryInterface {
     }
 
     async get(username: string): Promise<UserModel> {
+        if (global.describe) {
+            await this.connectDb(this.mockDb);
+        }
         try {
             const result = await this.db.findOne<UserModel>({ username });
             return result;

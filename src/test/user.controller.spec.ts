@@ -1,63 +1,50 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
+import * as request from 'supertest';
 
-import { UserController } from '../interface/user.controller';
-import { UserService } from '../application/user.service';
-import { UserRepositoryInterface } from '../domain/ports/outbound/user.repository';
-import { UserMockRepository } from '../infrastructure/user.repository.mock';
 import { MongoDB } from '../utils';
+import { AppModule } from '../app.module';
+import { INestApplication } from '@nestjs/common';
 
 
 describe('UserController', () => {
     const USER_DB = 'mock_user'
-    let appController: UserController;
+    let testapp: INestApplication;
+    let server: any;
 
     beforeEach(async () => {
         const app: TestingModule = await Test.createTestingModule({
             imports: [ConfigModule.forRoot({
                 envFilePath: '.env.test.local'
-            })],
-            controllers: [UserController],
-            providers: [UserService,
-                {
-                    provide: UserRepositoryInterface,
-                    useClass: UserMockRepository
-                }
-            ],
+            }), AppModule]
         }).compile();
 
-        appController = app.get<UserController>(UserController);
+        testapp = app.createNestApplication();
+        await testapp.init();
+        server = testapp.getHttpServer();
+    });
+
+    afterAll(async () => {
+        (await MongoDB.connection(USER_DB)).deleteMany()
     });
 
     describe('create user', () => {
         it('should return "create user success"', async () => {
-            expect(await appController.create({
-                username: 'user1',
-                picture: 'picture url'
-            })).toEqual({
-                message: 'create user success'
-            });
+            const result = await request(server)
+                .post('/v1/user')
+                .send({ username: 'testuser1' })
+            expect(result.body.message).toBe('create user success');
         });
 
-        afterEach(async () => {
-            (await MongoDB.connection(USER_DB)).deleteMany()
-        });
 
         it('should return "username already used"', async () => {
-            await appController.create({
-                username: 'user1'
-            });
-            try {
-                await appController.create({
-                    username: 'user1'
-                });
-            } catch (error) {
-                expect(error.message).toBe('username already used')
-            }
-        });
+            const result = await request(server)
+                .post('/v1/user')
+                .send({ username: 'testuser1' })
 
-        afterEach(async () => {
-            (await MongoDB.connection(USER_DB)).deleteMany()
+            const error = JSON.parse(result.error['text'])
+            expect(error.message).toBe('username already used');
+            expect(result.status).toBe(400);
         });
     });
 });
